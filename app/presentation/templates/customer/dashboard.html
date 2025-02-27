@@ -1,0 +1,123 @@
+{# app/presentation/templates/customer/dashboard.html #}
+{% extends "layout.html" %}
+
+{% block title %}Dashboard - Food Delivery App{% endblock %}
+
+{% block content %}
+<div class="row">
+    <div class="col-md-3">
+        <div class="card mb-4">
+            <div class="card-header bg-primary text-white">
+                Mi Cuenta
+            </div>
+            <div class="list-group list-group-flush">
+                <a href="{{ url_for('customer.dashboard') }}" class="list-group-item list-group-item-action active">
+                    <i class="fas fa-tachometer-alt"></i> Dashboard
+                </a>
+                <a href="{{ url_for('orders.list_orders') }}" class="list-group-item list-group-item-action">
+                    <i class="fas fa-clipboard-list"></i> Mis Pedidos
+                </a>
+                <a href="{{ url_for('customer.favorites') }}" class="list-group-item list-group-item-action">
+                    <i class="fas fa-heart"></i> Favoritos
+                </a>
+                <a href="{{ url_for('customer.profile') }}" class="list-group-item list-group-item-action">
+                    <i class="fas fa-user-edit"></i> Editar Perfil
+                </a>
+            </div>
+        </div>
+    </div>
+    
+    <div class="col-md-9">
+        <div class="card mb-4">
+            <div class="card-header">
+                <h5 class="mb-0">Pedidos Recientes</h5>
+            </div>
+            <div class="card-body">
+                {% if recent_orders %}
+                    <div class="table-responsive">
+                        <table class="table table-hover">
+                            <thead>
+                                <tr>
+                                    <th>Restaurante</th>
+                                    <th>Fecha</th>
+                                    <th>Total</th>
+                                    <th>Estado</th>
+                                    <th>Acciones</th>
+                                </tr>
+                            </thead>
+                            <tbody>
+                                {% for order in recent_orders %}
+                                <tr>
+                                    <td>{{ order.restaurant.name }}</td>
+                                    <td>{{ order.created_at.strftime('%d/%m/%Y %H:%M') }}</td>
+                                    <td>${{ "%.2f"|format(order.total_price) }}</td>
+                                    <td>
+                                        <span class="badge badge-{{ status_colors[order.status] }}">
+                                            {{ status_labels[order.status] }}
+                                        </span>
+                                    </td>
+                                    <td>
+                                        <a href="{{ url_for('orders.order_details', order_id=order.id) }}" 
+                                           class="btn btn-sm btn-outline-primary">
+                                            Ver Detalles
+                                        </a>
+                                    </td>
+                                </tr>
+                                {% endfor %}
+                            </tbody>
+                        </table>
+                    </div>
+                {% else %}
+                    <p class="text-muted">No tienes pedidos recientes.</p>
+                {% endif %}
+            </div>
+        </div>
+        
+        <div class="card">
+            <div class="card-header">
+                <h5 class="mb-0">Restaurantes Favoritos</h5>
+            </div>
+            <div class="card-body">
+                {% if favorite_restaurants %}
+                    <div class="row">
+                        {% for restaurant in favorite_restaurants %}
+                        <div class="col-md-6 mb-3">
+                            <div class="card h-100">
+                                <div class="row no-gutters">
+                                    <div class="col-md-4">
+                                        {% if restaurant.logo_url %}
+                                            <img src="{{ restaurant.logo_url }}" class="card-img" alt="{{ restaurant.name }}">
+                                        {% else %}
+                                            <div class="card-img bg-light text-center py-4">
+                                                <i class="fas fa-utensils fa-2x text-muted"></i>
+                                            </div>
+                                        {% endif %}
+                                    </div>
+                                    <div class="col-md-8">
+                                        <div class="card-body py-2">
+                                            <h6 class="card-title mb-1">{{ restaurant.name }}</h6>
+                                            <p class="card-text mb-1">
+                                                <small class="text-muted">{{ restaurant.cuisine_type }}</small>
+                                            </p>
+                                            <a href="{{ url_for('restaurant.details', id=restaurant.id) }}" 
+                                               class="btn btn-sm btn-primary mt-1">
+                                                Ordenar Ahora
+                                            </a>
+                                        </div>
+                                    </div>
+                                </div>
+                            </div>
+                        </div>
+                        {% endfor %}
+                    </div>
+                {% else %}
+                    <p class="text-muted">No tienes restaurantes favoritos.</p>
+                    <a href="{{ url_for('restaurants') }}" class="btn btn-outline-primary">
+                        Explorar Restaurantes
+                    </a>
+                {% endif %}
+            </div>
+        </div>
+    </div>
+</div>
+{% endblock %}

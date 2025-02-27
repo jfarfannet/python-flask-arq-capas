@@ -1,0 +1,253 @@
+{# app/presentation/templates/cart/checkout.html #}
+{% extends "layout.html" %}
+
+{% block title %}Checkout - Food Delivery App{% endblock %}
+
+{% block content %}
+<div class="row">
+    <div class="col-md-8">
+        <div class="card mb-4">
+            <div class="card-header">
+                <h4 class="mb-0">Finalizar Pedido</h4>
+            </div>
+            <div class="card-body">
+                <form id="checkout-form" method="post" action="{{ url_for('cart.process_checkout') }}">
+                    <input type="hidden" id="cart-data" name="cart_data">
+                    
+                    <h5 class="mb-3">Dirección de Entrega</h5>
+                    <div class="form-group">
+                        <label for="delivery_address">Dirección completa</label>
+                        <input type="text" class="form-control" id="delivery_address" name="delivery_address" 
+                               value="{{ current_user.customer.address }}" required>
+                    </div>
+                    
+                    <div class="form-row">
+                        <div class="form-group col-md-6">
+                            <label for="delivery_instructions">Instrucciones adicionales (opcional)</label>
+                            <textarea class="form-control" id="delivery_instructions" name="delivery_instructions" 
+                                      rows="2" placeholder="Ej: Timbre 2A, dejar en recepción, etc."></textarea>
+                        </div>
+                        <div class="form-group col-md-6">
+                            <label for="contact_phone">Teléfono de contacto</label>
+                            <input type="tel" class="form-control" id="contact_phone" name="contact_phone" 
+                                   value="{{ current_user.customer.phone }}" required>
+                        </div>
+                    </div>
+                    
+                    <h5 class="mb-3 mt-4">Método de Pago</h5>
+                    <div class="form-group">
+                        <div class="custom-control custom-radio">
+                            <input type="radio" id="payment_cash" name="payment_method" value="cash" 
+                                   class="custom-control-input" checked>
+                            <label class="custom-control-label" for="payment_cash">
+                                <i class="fas fa-money-bill-wave mr-2"></i> Efectivo
+                            </label>
+                        </div>
+                        <div class="custom-control custom-radio">
+                            <input type="radio" id="payment_card" name="payment_method" value="card" 
+                                   class="custom-control-input">
+                            <label class="custom-control-label" for="payment_card">
+                                <i class="fas fa-credit-card mr-2"></i> Tarjeta al entregar
+                            </label>
+                        </div>
+                        <div class="custom-control custom-radio">
+                            <input type="radio" id="payment_online" name="payment_method" value="online" 
+                                   class="custom-control-input">
+                            <label class="custom-control-label" for="payment_online">
+                                <i class="fas fa-globe mr-2"></i> Pago en línea
+                            </label>
+                        </div>
+                    </div>
+                    
+                    <div id="cash-payment-details" class="payment-details">
+                        <div class="form-group">
+                            <label for="cash_amount">¿Con cuánto pagarás?</label>
+                            <div class="input-group">
+                                <div class="input-group-prepend">
+                                    <span class="input-group-text">$</span>
+                                </div>
+                                <input type="number" class="form-control" id="cash_amount" name="cash_amount" 
+                                       placeholder="Dejar vacío si no necesitas cambio">
+                            </div>
+                            <small class="form-text text-muted">
+                                Opcional. Completa esto si necesitas que te lleven cambio.
+                            </small>
+                        </div>
+                    </div>
+                    
+                    <div id="card-payment-details" class="payment-details" style="display: none;">
+                        <p class="text-muted">
+                            El repartidor llevará un terminal de pago para que puedas pagar con tarjeta al momento de la entrega.
+                        </p>
+                    </div>
+                    
+                    <div id="online-payment-details" class="payment-details" style="display: none;">
+                        <div class="alert alert-info">
+                            Serás redirigido a nuestra pasarela de pago segura después de confirmar el pedido.
+                        </div>
+                    </div>
+                    
+                    <button type="submit" class="btn btn-primary btn-lg mt-4">
+                        <i class="fas fa-check-circle"></i> Confirmar Pedido
+                    </button>
+                </form>
+            </div>
+        </div>
+    </div>
+    
+    <div class="col-md-4">
+        <div class="card mb-4">
+            <div class="card-header">
+                <h5 class="mb-0">Resumen del Pedido</h5>
+            </div>
+            <div class="card-body">
+                <div id="checkout-items">
+                    <!-- Los items se cargarán con JavaScript -->
+                </div>
+                <hr>
+                <div class="d-flex justify-content-between mb-2">
+                    <span>Subtotal:</span>
+                    <span id="checkout-subtotal">$0.00</span>
+                </div>
+                <div class="d-flex justify-content-between mb-2">
+                    <span>Costo de envío:</span>
+                    <span id="checkout-shipping">$0.00</span>
+                </div>
+                <div class="d-flex justify-content-between font-weight-bold">
+                    <span>Total:</span>
+                    <span id="checkout-total">$0.00</span>
+                </div>
+            </div>
+        </div>
+        
+        <div class="card">
+            <div class="card-header">
+                <h5 class="mb-0">Información del Restaurante</h5>
+            </div>
+            <div class="card-body">
+                <div id="checkout-restaurant-info">
+                    <!-- La información del restaurante se cargará con JavaScript -->
+                </div>
+                <hr>
+                <p><strong>Tiempo estimado de entrega:</strong> <span id="delivery-time">30-45 minutos</span></p>
+            </div>
+        </div>
+    </div>
+</div>
+{% endblock %}
+
+{% block extra_js %}
+<script>
+    $(document).ready(function() {
+        // Cargar los datos del carrito
+        const cart = JSON.parse(localStorage.getItem('food_delivery_cart')) || { restaurant_id: null, items: [] };
+        
+        // Verificar si el carrito está vacío
+        if (!cart.restaurant_id || cart.items.length === 0) {
+            window.location.href = "{{ url_for('cart.view') }}";
+            return;
+        }
+        
+        // Establecer los datos del carrito en el campo oculto
+        $('#cart-data').val(JSON.stringify(cart));
+        
+        // Cargar los items en el resumen
+        let subtotal = 0;
+        const $checkoutItems = $('#checkout-items');
+        
+        cart.items.forEach(item => {
+            const itemTotal = item.price * item.quantity;
+            subtotal += itemTotal;
+            
+            $checkoutItems.append(`
+                <div class="d-flex justify-content-between mb-2">
+                    <span>${item.name} x ${item.quantity}</span>
+                    <span>$${itemTotal.toFixed(2)}</span>
+                </div>
+            `);
+        });
+        
+        // Calcular envío (gratis si el subtotal es mayor a $10)
+        const shipping = subtotal > 10 ? 0 : 2.99;
+        const total = subtotal + shipping;
+        
+        // Actualizar totales
+        $('#checkout-subtotal').text(`$${subtotal.toFixed(2)}`);
+        $('#checkout-shipping').text(shipping === 0 ? 'Gratis' : `$${shipping.toFixed(2)}`);
+        $('#checkout-total').text(`$${total.toFixed(2)}`);
+        
+        // Cargar información del restaurante
+        if (cart.restaurant_id) {
+            $.ajax({
+                url: `/api/restaurant/${cart.restaurant_id}`,
+                type: 'GET',
+                success: function(response) {
+                    $('#checkout-restaurant-info').html(`
+                        <div class="d-flex align-items-start mb-3">
+                            <div class="mr-3">
+                                ${response.logo_url ? `<img src="${response.logo_url}" alt="${response.name}" width="60" class="rounded">` : 
+                                '<div class="rounded bg-light text-center p-2" style="width: 60px; height: 60px;"><i class="fas fa-utensils text-muted"></i></div>'}
+                            </div>
+                            <div>
+                                <h6 class="mb-1">${response.name}</h6>
+                                <p class="mb-0 text-muted small">${response.address}</p>
+                                <p class="mb-0 text-muted small">${response.phone}</p>
+                            </div>
+                        </div>
+                    `);
+                    
+                    // Ajustar tiempo de entrega basado en distancia (simulado)
+                    const deliveryTimes = {
+                        'close': '25-35 minutos',
+                        'medium': '30-45 minutos',
+                        'far': '45-60 minutos'
+                    };
+                    
+                    // Simular distancia basada en el ID del restaurante
+                    const distance = ['close', 'medium', 'far'][response.id % 3];
+                    $('#delivery-time').text(deliveryTimes[distance]);
+                }
+            });
+        }
+        
+        // Mostrar/ocultar detalles de pago según el método seleccionado
+        $('input[name="payment_method"]').change(function() {
+            const method = $(this).val();
+            $('.payment-details').hide();
+            $(`#${method}-payment-details`).show();
+        });
+        
+        // Validar formulario antes de enviar
+        $('#checkout-form').submit(function(e) {
+            const paymentMethod = $('input[name="payment_method"]:checked').val();
+            
+            // Validar dirección
+            if ($('#delivery_address').val().trim() === '') {
+                e.preventDefault();
+                alert('Por favor ingresa una dirección de entrega válida.');
+                return false;
+            }
+            
+            // Validar teléfono
+            if ($('#contact_phone').val().trim() === '') {
+                e.preventDefault();
+                alert('Por favor ingresa un teléfono de contacto válido.');
+                return false;
+            }
+            
+            // Validaciones específicas según el método de pago
+            if (paymentMethod === 'cash') {
+                const cashAmount = $('#cash_amount').val();
+                if (cashAmount && parseFloat(cashAmount) < total) {
+                    e.preventDefault();
+                    alert('El monto en efectivo debe ser mayor o igual al total del pedido.');
+                    return false;
+                }
+            }
+            
+            // Si todo está bien, confirmar
+            return confirm('¿Estás seguro de que deseas realizar este pedido?');
+        });
+    });
+</script>
+{% endblock %}

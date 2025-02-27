@@ -1,0 +1,113 @@
+{# app/presentation/templates/customer/setup_profile.html #}
+{% extends "layout.html" %}
+
+{% block title %}Configurar Perfil - Food Delivery App{% endblock %}
+
+{% block content %}
+<div class="row justify-content-center">
+    <div class="col-md-8">
+        <div class="card">
+            <div class="card-header bg-primary text-white">
+                <h4 class="mb-0">Configuración Inicial de Perfil</h4>
+            </div>
+            <div class="card-body">
+                <div class="setup-steps mb-4">
+                    <div class="step active">
+                        <div class="step-number">1</div>
+                        <div class="step-label">Información Personal</div>
+                    </div>
+                    <div class="step-connector"></div>
+                    <div class="step">
+                        <div class="step-number">2</div>
+                        <div class="step-label">¡Listo!</div>
+                    </div>
+                </div>
+                
+                <p class="text-muted mb-4">
+                    ¡Bienvenido a Food Delivery! Para comenzar a disfrutar de nuestro servicio, necesitamos algunos datos básicos.
+                </p>
+                
+                <form method="post" action="{{ url_for('customer.setup_profile') }}">
+                    <div class="form-group">
+                        <label for="name">Nombre completo</label>
+                        <input type="text" class="form-control" id="name" name="name" required>
+                    </div>
+                    
+                    <div class="form-group">
+                        <label for="phone">Teléfono</label>
+                        <input type="tel" class="form-control" id="phone" name="phone" required>
+                        <small class="form-text text-muted">
+                            Necesitamos tu teléfono para que los repartidores puedan contactarte si es necesario.
+                        </small>
+                    </div>
+                    
+                    <div class="form-group">
+                        <label for="address">Dirección de entrega</label>
+                        <input type="text" class="form-control" id="address" name="address" required>
+                        <small class="form-text text-muted">
+                            Esta será tu dirección predeterminada para los pedidos, pero podrás cambiarla en cada pedido.
+                        </small>
+                    </div>
+                    
+                    <button type="submit" class="btn btn-primary btn-lg btn-block mt-4">
+                        Continuar <i class="fas fa-arrow-right"></i>
+                    </button>
+                </form>
+            </div>
+        </div>
+    </div>
+</div>
+
+<style>
+    .setup-steps {
+        display: flex;
+        align-items: center;
+        justify-content: space-between;
+        margin: 2rem 0;
+    }
+    
+    .step {
+        display: flex;
+        flex-direction: column;
+        align-items: center;
+        position: relative;
+    }
+    
+    .step-number {
+        width: 40px;
+        height: 40px;
+        border-radius: 50%;
+        background-color: #e9ecef;
+        color: #6c757d;
+        display: flex;
+        align-items: center;
+        justify-content: center;
+        font-weight: bold;
+        margin-bottom: 0.5rem;
+    }
+    
+    .step.active .step-number {
+        background-color: var(--primary);
+        color: white;
+    }
+    
+    .step-label {
+        font-size: 0.8rem;
+        color: #6c757d;
+        text-align: center;
+    }
+    
+    .step.active .step-label {
+        color: var(--primary);
+        font-weight: bold;
+    }
+    
+    .step-connector {
+        flex-grow: 1;
+        height: 2px;
+        background-color: #e9ecef;
+        margin: 0 10px;
+        margin-bottom: 25px;
+    }
+</style>
+{% endblock %}

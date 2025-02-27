@@ -1,0 +1,116 @@
+# Archivos de entorno
+.env
+.venv
+env/
+venv/
+ENV/
+env.bak/
+venv.bak/
+
+# Base de datos SQLite
+*.db
+*.sqlite
+*.sqlite3
+
+# Archivos de Python
+__pycache__/
+*.py[cod]
+*$py.class
+*.so
+.Python
+build/
+develop-eggs/
+dist/
+downloads/
+eggs/
+.eggs/
+lib/
+lib64/
+parts/
+sdist/
+var/
+wheels/
+*.egg-info/
+.installed.cfg
+*.egg
+MANIFEST
+
+# Archivos de pruebas y cobertura
+htmlcov/
+.tox/
+.nox/
+.coverage
+.coverage.*
+.cache
+nosetests.xml
+coverage.xml
+*.cover
+.hypothesis/
+.pytest_cache/
+
+# Archivos de Flask
+instance/
+.webassets-cache
+
+# Archivos subidos por usuarios
+app/presentation/static/uploads/*
+!app/presentation/static/uploads/.gitkeep
+
+# Logs
+logs/
+*.log
+pip-log.txt
+pip-delete-this-directory.txt
+
+# Entornos virtuales
+.python-version
+
+# IDEs y editores
+.idea/
+.vscode/
+*.swp
+*.swo
+*~
+.vs/
+.spyderproject
+.spyproject
+.ropeproject
+.project
+.pydevproject
+.settings/
+.classpath
+.factorypath
+.apt_generated/
+.apt_generated_test/
+
+# Directorios de migraciones generados (excepto los archivos principales)
+migrations/versions/*
+!migrations/versions/.gitkeep
+
+# Archivos de Mac OS
+.DS_Store
+.AppleDouble
+.LSOverride
+Icon
+._*
+.DocumentRevisions-V100
+.fseventsd
+.Spotlight-V100
+.TemporaryItems
+.Trashes
+.VolumeIcon.icns
+.com.apple.timemachine.donotpresent
+
+# Archivos de Windows
+Thumbs.db
+ehthumbs.db
+ehthumbs_vista.db
+*.stackdump
+[Dd]esktop.ini
+$RECYCLE.BIN/
+*.cab
+*.msi
+*.msix
+*.msm
+*.msp
+*.lnk

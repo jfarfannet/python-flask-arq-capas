@@ -1,0 +1,163 @@
+{# app/presentation/templates/restaurant/profile.html #}
+{% extends "layout.html" %}
+
+{% block title %}Perfil del Restaurante - Food Delivery App{% endblock %}
+
+{% block content %}
+<div class="row">
+    <div class="col-md-3">
+        <div class="card mb-4">
+            <div class="card-header bg-primary text-white">
+                Gestión del Restaurante
+            </div>
+            <div class="list-group list-group-flush">
+                <a href="{{ url_for('restaurant.dashboard') }}" class="list-group-item list-group-item-action">
+                    <i class="fas fa-tachometer-alt"></i> Dashboard
+                </a>
+                <a href="{{ url_for('restaurant.orders') }}" class="list-group-item list-group-item-action">
+                    <i class="fas fa-clipboard-list"></i> Pedidos
+                </a>
+                <a href="{{ url_for('menu.manage_menu') }}" class="list-group-item list-group-item-action">
+                    <i class="fas fa-utensils"></i> Gestión de Menú
+                </a>
+                <a href="{{ url_for('restaurant.profile') }}" class="list-group-item list-group-item-action active">
+                    <i class="fas fa-store"></i> Perfil del Restaurante
+                </a>
+            </div>
+        </div>
+    </div>
+    
+    <div class="col-md-9">
+        <div class="card">
+            <div class="card-header">
+                <h4 class="mb-0">Perfil del Restaurante</h4>
+            </div>
+            <div class="card-body">
+                <form method="post" action="{{ url_for('restaurant.profile') }}" enctype="multipart/form-data">
+                    <div class="row">
+                        <div class="col-md-4">
+                            <div class="text-center mb-4">
+                                {% if restaurant.logo_url %}
+                                    <img src="{{ restaurant.logo_url }}" alt="Logo del restaurante" class="img-fluid restaurant-logo mb-3">
+                                {% else %}
+                                    <div class="restaurant-logo-placeholder mb-3">
+                                        <i class="fas fa-utensils fa-4x text-muted"></i>
+                                    </div>
+                                {% endif %}
+                                
+                                <div class="form-group">
+                                    <label for="logo" class="d-block">Logo del restaurante</label>
+                                    <input type="file" class="form-control-file" id="logo" name="logo" accept="image/*">
+                                    <small class="form-text text-muted">
+                                        Formatos permitidos: JPG, PNG. Máximo 2MB.
+                                    </small>
+                                </div>
+                            </div>
+                        </div>
+                        
+                        <div class="col-md-8">
+                            <div class="form-group">
+                                <label for="name">Nombre del restaurante</label>
+                                <input type="text" class="form-control" id="name" name="name" value="{{ restaurant.name }}" required>
+                            </div>
+                            
+                            <div class="form-group">
+                                <label for="description">Descripción</label>
+                                <textarea class="form-control" id="description" name="description" rows="3">{{ restaurant.description }}</textarea>
+                            </div>
+                            
+                            <div class="form-group">
+                                <label for="cuisine_type">Tipo de cocina</label>
+                                <select class="form-control" id="cuisine_type" name="cuisine_type" required>
+                                    <option value="">Seleccionar...</option>
+                                    {% for cuisine in cuisine_types %}
+                                        <option value="{{ cuisine.value }}" {% if restaurant.cuisine_type == cuisine.value %}selected{% endif %}>
+                                            {{ cuisine.label }}
+                                        </option>
+                                    {% endfor %}
+                                </select>
+                            </div>
+                        </div>
+                    </div>
+                    
+                    <div class="form-group">
+                        <label for="address">Dirección</label>
+                        <input type="text" class="form-control" id="address" name="address" value="{{ restaurant.address }}" required>
+                    </div>
+                    
+                    <div class="form-group">
+                        <label for="phone">Teléfono</label>
+                        <input type="tel" class="form-control" id="phone" name="phone" value="{{ restaurant.phone }}" required>
+                    </div>
+                    
+                    <div class="form-group">
+                        <label for="opening_hours">Horario de atención</label>
+                        <input type="text" class="form-control" id="opening_hours" name="opening_hours" 
+                               value="{{ restaurant.opening_hours }}" placeholder="Ej: Lun-Vie: 10:00-22:00, Sáb-Dom: 11:00-23:00" required>
+                    </div>
+                    
+                    <div class="form-group">
+                        <label for="delivery_radius">Radio de entrega (km)</label>
+                        <input type="number" class="form-control" id="delivery_radius" name="delivery_radius" 
+                               value="{{ restaurant.delivery_radius }}" min="1" max="20" step="0.5" required>
+                        <small class="form-text text-muted">
+                            Determina la distancia máxima a la que puedes realizar entregas.
+                        </small>
+                    </div>
+                    
+                    <div class="form-group">
+                        <label for="average_delivery_time">Tiempo promedio de entrega (minutos)</label>
+                        <input type="number" class="form-control" id="average_delivery_time" name="average_delivery_time" 
+                               value="{{ restaurant.average_delivery_time }}" min="10" max="120" step="5" required>
+                    </div>
+                    
+                    <div class="form-group">
+                        <label>Estado del restaurante</label>
+                        <div class="custom-control custom-switch">
+                            <input type="checkbox" class="custom-control-input" id="is_active" name="is_active" 
+                            {% if restaurant.is_active %}checked{% endif %}>
+                      <label class="custom-control-label" for="is_active">
+                          Restaurante disponible para pedidos
+                      </label>
+                      <small class="form-text text-muted">
+                          Desactiva esta opción si necesitas pausar temporalmente los pedidos.
+                      </small>
+                  </div>
+              </div>
+              
+              <button type="submit" class="btn btn-primary">Guardar Cambios</button>
+          </form>
+      </div>
+  </div>
+  
+  <div class="card mt-4">
+      <div class="card-header">
+          <h4 class="mb-0">Cambiar Contraseña</h4>
+      </div>
+      <div class="card-body">
+          <form method="post" action="{{ url_for('auth.change_password') }}">
+              <div class="form-group">
+                  <label for="current_password">Contraseña actual</label>
+                  <input type="password" class="form-control" id="current_password" name="current_password" required>
+              </div>
+              
+              <div class="form-group">
+                  <label for="new_password">Nueva contraseña</label>
+                  <input type="password" class="form-control" id="new_password" name="new_password" required>
+                  <small class="form-text text-muted">
+                      La contraseña debe tener al menos 8 caracteres.
+                  </small>
+              </div>
+              
+              <div class="form-group">
+                  <label for="confirm_password">Confirmar nueva contraseña</label>
+                  <input type="password" class="form-control" id="confirm_password" name="confirm_password" required>
+              </div>
+              
+              <button type="submit" class="btn btn-primary">Cambiar Contraseña</button>
+          </form>
+      </div>
+  </div>
+</div>
+</div>
+{% endblock %}

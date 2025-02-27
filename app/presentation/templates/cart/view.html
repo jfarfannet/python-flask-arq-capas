@@ -1,0 +1,101 @@
+{# app/presentation/templates/cart/view.html #}
+{% extends "layout.html" %}
+
+{% block title %}Carrito - Food Delivery App{% endblock %}
+
+{% block content %}
+<div class="row">
+    <div class="col-md-8">
+        <div class="card mb-4">
+            <div class="card-header d-flex justify-content-between align-items-center">
+                <h4 class="mb-0">Tu Carrito</h4>
+                <button id="clear-cart-btn" class="btn btn-sm btn-outline-danger" type="button">
+                    <i class="fas fa-trash"></i> Vaciar Carrito
+                </button>
+            </div>
+            <div class="card-body">
+                <div class="table-responsive">
+                    <table class="table">
+                        <thead>
+                            <tr>
+                                <th>Producto</th>
+                                <th class="text-right">Precio</th>
+                                <th>Cantidad</th>
+                                <th class="text-right">Subtotal</th>
+                                <th class="text-center">Acciones</th>
+                            </tr>
+                        </thead>
+                        <tbody id="cart-items">
+                            <!-- Los items del carrito se renderizarán con JavaScript -->
+                        </tbody>
+                        <tfoot>
+                            <tr>
+                                <th colspan="3" class="text-right">Total:</th>
+                                <th id="cart-total" class="text-right">$0.00</th>
+                                <td></td>
+                            </tr>
+                        </tfoot>
+                    </table>
+                </div>
+            </div>
+            <div class="card-footer">
+                <a href="javascript:history.back()" class="btn btn-outline-secondary">
+                    <i class="fas fa-arrow-left"></i> Seguir Comprando
+                </a>
+                <a href="{{ url_for('cart.checkout') }}" id="checkout-btn" class="btn btn-primary float-right" disabled>
+                    <i class="fas fa-check"></i> Proceder al Pago
+                </a>
+            </div>
+        </div>
+    </div>
+    
+    <div class="col-md-4">
+        <div class="card">
+            <div class="card-header">
+                <h5 class="mb-0">Resumen</h5>
+            </div>
+            <div class="card-body">
+                <div id="restaurant-info">
+                    <!-- La información del restaurante se cargará con JavaScript -->
+                </div>
+                <hr>
+                <p><strong>Tiempo estimado de entrega:</strong> 30-45 minutos</p>
+                <p><strong>Costo de envío:</strong> Gratis (pedidos superiores a $10)</p>
+                <p class="text-muted small">
+                    Los precios pueden variar dependiendo de las promociones disponibles y la ubicación de entrega.
+                </p>
+            </div>
+        </div>
+    </div>
+</div>
+{% endblock %}
+
+{% block extra_js %}
+<script>
+    $(document).ready(function() {
+        // Obtener información del restaurante
+        const cart = JSON.parse(localStorage.getItem('food_delivery_cart')) || { restaurant_id: null, items: [] };
+        
+        if (cart.restaurant_id) {
+            $.ajax({
+                url: `/api/restaurant/${cart.restaurant_id}`,
+                type: 'GET',
+                success: function(response) {
+                    $('#restaurant-info').html(`
+                        <div class="d-flex align-items-start mb-3">
+                            <div class="mr-3">
+                                ${response.logo_url ? `<img src="${response.logo_url}" alt="${response.name}" width="60" class="rounded">` : 
+                                '<div class="rounded bg-light text-center p-2" style="width: 60px; height: 60px;"><i class="fas fa-utensils text-muted"></i></div>'}
+                            </div>
+                            <div>
+                                <h6 class="mb-1">${response.name}</h6>
+                                <p class="mb-0 text-muted small">${response.address}</p>
+                            </div>
+                        </div>
+                    `);
+                }
+            });
+        }
+    });
+</script>
+{% endblock %}

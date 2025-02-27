@@ -1,0 +1,255 @@
+{# app/presentation/templates/menu/menu_list.html #}
+{% extends "layout.html" %}
+
+{% block title %}{{ restaurant.name }} - Menú - Food Delivery App{% endblock %}
+
+{% block content %}
+<div class="restaurant-header mb-4">
+    <div class="row">
+        <div class="col-md-3">
+            {% if restaurant.logo_url %}
+                <img src="{{ restaurant.logo_url }}" alt="{{ restaurant.name }}" class="img-fluid restaurant-logo">
+            {% else %}
+                <div class="restaurant-logo-placeholder text-center">
+                    <i class="fas fa-utensils fa-4x text-muted"></i>
+                </div>
+            {% endif %}
+        </div>
+        <div class="col-md-9">
+            <h2>{{ restaurant.name }}</h2>
+            <p class="text-muted">{{ restaurant.description }}</p>
+            <div class="restaurant-info">
+                <span class="mr-3">
+                    <i class="fas fa-map-marker-alt"></i> {{ restaurant.address }}
+                </span>
+                <span class="mr-3">
+                    <i class="fas fa-utensils"></i> {{ restaurant.cuisine_type }}
+                </span>
+                <span>
+                    <i class="fas fa-clock"></i> {{ restaurant.opening_hours }}
+                </span>
+            </div>
+            {% if restaurant.average_rating %}
+            <div class="restaurant-rating mt-2">
+                {% for i in range(5) %}
+                    {% if i < restaurant.average_rating|int %}
+                        <i class="fas fa-star text-warning"></i>
+                    {% elif i < restaurant.average_rating|round(0, 'ceil')|int and (restaurant.average_rating % 1) > 0 %}
+                        <i class="fas fa-star-half-alt text-warning"></i>
+                    {% else %}
+                        <i class="far fa-star text-warning"></i>
+                    {% endif %}
+                {% endfor %}
+                <span class="ml-1">{{ restaurant.average_rating|round(1) }} ({{ restaurant.total_ratings }} reseñas)</span>
+            </div>
+            {% endif %}
+            
+            {% if current_user.is_authenticated and current_user.role == 'customer' %}
+                <div class="mt-3">
+                    {% if restaurant.id in favorite_restaurant_ids %}
+                        <form method="post" action="{{ url_for('customer.remove_favorite', restaurant_id=restaurant.id) }}" 
+                              class="d-inline">
+                            <button type="submit" class="btn btn-sm btn-outline-danger">
+                                <i class="fas fa-heart"></i> Quitar de Favoritos
+                            </button>
+                        </form>
+                    {% else %}
+                        <form method="post" action="{{ url_for('customer.add_favorite', restaurant_id=restaurant.id) }}" 
+                              class="d-inline">
+                            <button type="submit" class="btn btn-sm btn-outline-secondary">
+                                <i class="far fa-heart"></i> Añadir a Favoritos
+                            </button>
+                        </form>
+                    {% endif %}
+                </div>
+            {% endif %}
+        </div>
+    </div>
+</div>
+
+{% if categories %}
+    <div class="menu-nav-container mb-4">
+        <ul class="nav nav-pills menu-nav">
+            {% for category in categories %}
+                <li class="nav-item">
+                    <a class="nav-link {% if loop.first %}active{% endif %}" href="#category-{{ category.id }}">
+                        {{ category.name }}
+                    </a>
+                </li>
+            {% endfor %}
+        </ul>
+    </div>
+
+    <div class="menu-content">
+        {% for category in categories %}
+            <div class="menu-category mb-5" id="category-{{ category.id }}">
+                <h3 class="category-title">{{ category.name }}</h3>
+                {% if category.description %}
+                    <p class="text-muted">{{ category.description }}</p>
+                {% endif %}
+                
+                <div class="row">
+                    {% set items_in_category = menu_items|selectattr('category_id', 'equalto', category.id)|list %}
+                    {% if items_in_category %}
+                        {% for item in items_in_category %}
+                            <div class="col-md-6 col-lg-4 mb-4">
+                                <div class="card h-100 menu-item-card">
+                                    {% if item.image_url %}
+                                        <img src="{{ item.image_url }}" class="card-img-top menu-item-img" alt="{{ item.name }}">
+                                    {% else %}
+                                        <div class="card-img-top menu-item-img-placeholder text-center">
+                                            <i class="fas fa-image fa-3x text-muted"></i>
+                                        </div>
+                                    {% endif %}
+                                    <div class="card-body">
+                                        <div class="d-flex justify-content-between align-items-start">
+                                            <h5 class="card-title">{{ item.name }}</h5>
+                                            <span class="badge badge-primary price-badge">${{ "%.2f"|format(item.price) }}</span>
+                                        </div>
+                                        {% if item.description %}
+                                            <p class="card-text text-muted small">{{ item.description }}</p>
+                                        {% endif %}
+                                    </div>
+                                    <div class="card-footer bg-transparent">
+                                        {% if current_user.is_authenticated and current_user.role == 'customer' %}
+                                            <button class="btn btn-sm btn-primary add-to-cart-btn" 
+                                                    data-id="{{ item.id }}" 
+                                                    data-name="{{ item.name }}" 
+                                                    data-price="{{ item.price }}">
+                                                <i class="fas fa-plus"></i> Añadir al Carrito
+                                            </button>
+                                        {% endif %}
+                                    </div>
+                                </div>
+                            </div>
+                        {% endfor %}
+                    {% else %}
+                        <div class="col-12">
+                            <p class="text-muted">No hay productos disponibles en esta categoría.</p>
+                        </div>
+                    {% endif %}
+                </div>
+            </div>
+        {% endfor %}
+    </div>
+{% else %}
+    <div class="alert alert-info">
+        Este restaurante aún no ha añadido productos a su menú.
+    </div>
+{% endif %}
+
+{% if current_user.is_authenticated and current_user.role == 'customer' %}
+    <div class="cart-fab" id="view-cart-btn" style="display: none;">
+        <span class="cart-count badge badge-light" id="cart-items-count">0</span>
+        <i class="fas fa-shopping-cart"></i>
+    </div>
+{% endif %}
+
+{% block extra_js %}
+<script>
+    // Script para la navegación por el menú
+    $(document).ready(function() {
+        $('.menu-nav a').on('click', function(e) {
+            e.preventDefault();
+            const target = $(this).attr('href');
+            
+            $('.menu-nav a').removeClass('active');
+            $(this).addClass('active');
+            
+            $('html, body').animate({
+                scrollTop: $(target).offset().top - 100
+            }, 500);
+        });
+        
+        // Carrito de compras (cliente)
+        {% if current_user.is_authenticated and current_user.role == 'customer' %}
+            // Inicializar carrito
+            let cart = JSON.parse(localStorage.getItem('food_delivery_cart')) || {
+                restaurant_id: {{ restaurant.id }},
+                items: []
+            };
+            
+            // Si el carrito es de otro restaurante, vaciarlo
+            if (cart.restaurant_id !== {{ restaurant.id }}) {
+                if (confirm('Tu carrito contiene items de otro restaurante. ¿Deseas vaciarlo para ordenar de este restaurante?')) {
+                    cart = {
+                        restaurant_id: {{ restaurant.id }},
+                        items: []
+                    };
+                    localStorage.setItem('food_delivery_cart', JSON.stringify(cart));
+                } else {
+                    // Deshabilitar botones de añadir al carrito
+                    $('.add-to-cart-btn').prop('disabled', true);
+                }
+            }
+            
+            // Actualizar contador del carrito
+            updateCartCounter();
+            
+            // Añadir al carrito
+            $('.add-to-cart-btn').click(function() {
+                const itemId = $(this).data('id');
+                const itemName = $(this).data('name');
+                const itemPrice = $(this).data('price');
+                
+                // Buscar si el item ya está en el carrito
+                const existingItem = cart.items.find(item => item.id === itemId);
+                
+                if (existingItem) {
+                    existingItem.quantity += 1;
+                } else {
+                    cart.items.push({
+                        id: itemId,
+                        name: itemName,
+                        price: itemPrice,
+                        quantity: 1
+                    });
+                }
+                
+                // Guardar carrito en localStorage
+                localStorage.setItem('food_delivery_cart', JSON.stringify(cart));
+                
+                // Actualizar contador
+                updateCartCounter();
+                
+                // Mostrar notificación
+                showNotification(`${itemName} añadido al carrito`);
+            });
+            
+            // Ver carrito
+            $('#view-cart-btn').click(function() {
+                window.location.href = "{{ url_for('cart.view') }}";
+            });
+            
+            // Función para actualizar el contador del carrito
+            function updateCartCounter() {
+                const totalItems = cart.items.reduce((total, item) => total + item.quantity, 0);
+                $('#cart-items-count').text(totalItems);
+                
+                if (totalItems > 0) {
+                    $('#view-cart-btn').show();
+                } else {
+                    $('#view-cart-btn').hide();
+                }
+            }
+            
+            // Función para mostrar notificación
+            function showNotification(message) {
+                // Crear notificación
+                const notification = $('<div class="notification"></div>')
+                    .text(message)
+                    .appendTo('body');
+                
+                // Mostrar y ocultar después de 3 segundos
+                notification.addClass('show');
+                setTimeout(function() {
+                    notification.removeClass('show');
+                    setTimeout(function() {
+                        notification.remove();
+                    }, 300);
+                }, 3000);
+            }
+        {% endif %}
+    });
+</script>
+{% endblock %}

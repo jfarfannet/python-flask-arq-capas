@@ -1,0 +1,332 @@
+{# app/presentation/templates/restaurant/menu_editor.html #}
+{% extends "layout.html" %}
+
+{% block title %}Gestión de Menú - Food Delivery App{% endblock %}
+
+{% block content %}
+<div class="row">
+    <div class="col-md-3">
+        <div class="card mb-4">
+            <div class="card-header bg-primary text-white">
+                Gestión del Restaurante
+            </div>
+            <div class="list-group list-group-flush">
+                <a href="{{ url_for('restaurant.dashboard') }}" class="list-group-item list-group-item-action">
+                    <i class="fas fa-tachometer-alt"></i> Dashboard
+                </a>
+                <a href="{{ url_for('restaurant.orders') }}" class="list-group-item list-group-item-action">
+                    <i class="fas fa-clipboard-list"></i> Pedidos
+                </a>
+                <a href="{{ url_for('menu.manage_menu') }}" class="list-group-item list-group-item-action active">
+                    <i class="fas fa-utensils"></i> Gestión de Menú
+                </a>
+                <a href="{{ url_for('restaurant.profile') }}" class="list-group-item list-group-item-action">
+                    <i class="fas fa-store"></i> Perfil del Restaurante
+                </a>
+            </div>
+        </div>
+    </div>
+    
+    <div class="col-md-9">
+        <div class="card mb-4">
+            <div class="card-header d-flex justify-content-between align-items-center">
+                <h5 class="mb-0">Categorías del Menú</h5>
+                <button type="button" class="btn btn-sm btn-primary" data-toggle="modal" data-target="#addCategoryModal">
+                    <i class="fas fa-plus"></i> Añadir Categoría
+                </button>
+            </div>
+            <div class="card-body">
+                {% if categories %}
+                    <div class="table-responsive">
+                        <table class="table table-hover">
+                            <thead>
+                                <tr>
+                                    <th>Nombre</th>
+                                    <th>Descripción</th>
+                                    <th>Items</th>
+                                    <th>Acciones</th>
+                                </tr>
+                            </thead>
+                            <tbody>
+                                {% for category in categories %}
+                                <tr>
+                                    <td>{{ category.name }}</td>
+                                    <td>{{ category.description }}</td>
+                                    <td>{{ category.items|length }}</td>
+                                    <td>
+                                        <button type="button" class="btn btn-sm btn-outline-primary edit-category-btn" 
+                                                data-id="{{ category.id }}" data-name="{{ category.name }}" 
+                                                data-description="{{ category.description }}" 
+                                                data-toggle="modal" data-target="#editCategoryModal">
+                                            <i class="fas fa-edit"></i>
+                                        </button>
+                                    </td>
+                                </tr>
+                                {% endfor %}
+                            </tbody>
+                        </table>
+                    </div>
+                {% else %}
+                    <p class="text-muted">No hay categorías definidas. Añade tu primera categoría para comenzar a crear tu menú.</p>
+                {% endif %}
+            </div>
+        </div>
+        
+        <div class="card">
+            <div class="card-header d-flex justify-content-between align-items-center">
+                <h5 class="mb-0">Items del Menú</h5>
+                <button type="button" class="btn btn-sm btn-primary" data-toggle="modal" data-target="#addItemModal" 
+                        {% if not categories %}disabled{% endif %}>
+                    <i class="fas fa-plus"></i> Añadir Item
+                </button>
+            </div>
+            <div class="card-body">
+                {% if menu_items %}
+                    <div class="table-responsive">
+                        <table class="table table-hover">
+                            <thead>
+                                <tr>
+                                    <th>Imagen</th>
+                                    <th>Nombre</th>
+                                    <th>Categoría</th>
+                                    <th>Precio</th>
+                                    <th>Acciones</th>
+                                </tr>
+                            </thead>
+                            <tbody>
+                                {% for item in menu_items %}
+                                <tr>
+                                    <td>
+                                        {% if item.image_url %}
+                                            <img src="{{ item.image_url }}" alt="{{ item.name }}" class="thumbnail" width="50">
+                                        {% else %}
+                                            <div class="thumbnail-placeholder">
+                                                <i class="fas fa-image text-muted"></i>
+                                            </div>
+                                        {% endif %}
+                                    </td>
+                                    <td>{{ item.name }}</td>
+                                    <td>{{ item.category.name }}</td>
+                                    <td>${{ "%.2f"|format(item.price) }}</td>
+                                    <td>
+                                        <button type="button" class="btn btn-sm btn-outline-primary edit-item-btn" 
+                                                data-id="{{ item.id }}" data-name="{{ item.name }}" 
+                                                data-description="{{ item.description }}" data-price="{{ item.price }}"
+                                                data-category="{{ item.category_id }}" data-toggle="modal" 
+                                                data-target="#editItemModal">
+                                            <i class="fas fa-edit"></i>
+                                        </button>
+                                        <form method="post" action="{{ url_for('menu.delete_item', item_id=item.id) }}" 
+                                              class="d-inline delete-item-form">
+                                            <button type="submit" class="btn btn-sm btn-outline-danger">
+                                                <i class="fas fa-trash"></i>
+                                            </button>
+                                        </form>
+                                    </td>
+                                </tr>
+                                {% endfor %}
+                            </tbody>
+                        </table>
+                    </div>
+                {% else %}
+                    <p class="text-muted">
+                        {% if categories %}
+                            No hay items en el menú. Añade tu primer producto para comenzar a vender.
+                        {% else %}
+                            Debes crear al menos una categoría antes de poder añadir items al menú.
+                        {% endif %}
+                    </p>
+                {% endif %}
+            </div>
+        </div>
+    </div>
+</div>
+
+<!-- Modal para añadir categoría -->
+<div class="modal fade" id="addCategoryModal" tabindex="-1" role="dialog" aria-labelledby="addCategoryModalLabel" aria-hidden="true">
+    <div class="modal-dialog" role="document">
+        <div class="modal-content">
+            <div class="modal-header">
+                <h5 class="modal-title" id="addCategoryModalLabel">Añadir Categoría</h5>
+                <button type="button" class="close" data-dismiss="modal" aria-label="Close">
+                    <span aria-hidden="true">&times;</span>
+                </button>
+            </div>
+            <form method="post" action="{{ url_for('menu.add_category') }}">
+                <div class="modal-body">
+                    <div class="form-group">
+                        <label for="category_name">Nombre</label>
+                        <input type="text" class="form-control" id="category_name" name="name" required>
+                    </div>
+                    <div class="form-group">
+                        <label for="category_description">Descripción</label>
+                        <textarea class="form-control" id="category_description" name="description" rows="3"></textarea>
+                    </div>
+                </div>
+                <div class="modal-footer">
+                    <button type="button" class="btn btn-secondary" data-dismiss="modal">Cancelar</button>
+                    <button type="submit" class="btn btn-primary">Guardar</button>
+                </div>
+            </form>
+        </div>
+    </div>
+</div>
+
+<!-- Modal para editar categoría -->
+<div class="modal fade" id="editCategoryModal" tabindex="-1" role="dialog" aria-labelledby="editCategoryModalLabel" aria-hidden="true">
+    <div class="modal-dialog" role="document">
+        <div class="modal-content">
+            <div class="modal-header">
+                <h5 class="modal-title" id="editCategoryModalLabel">Editar Categoría</h5>
+                <button type="button" class="close" data-dismiss="modal" aria-label="Close">
+                    <span aria-hidden="true">&times;</span>
+                </button>
+            </div>
+            <form method="post" action="" id="edit-category-form">
+                <div class="modal-body">
+                    <div class="form-group">
+                        <label for="edit_category_name">Nombre</label>
+                        <input type="text" class="form-control" id="edit_category_name" name="name" required>
+                    </div>
+                    <div class="form-group">
+                        <label for="edit_category_description">Descripción</label>
+                        <textarea class="form-control" id="edit_category_description" name="description" rows="3"></textarea>
+                    </div>
+                </div>
+                <div class="modal-footer">
+                    <button type="button" class="btn btn-secondary" data-dismiss="modal">Cancelar</button>
+                    <button type="submit" class="btn btn-primary">Guardar Cambios</button>
+                </div>
+            </form>
+        </div>
+    </div>
+</div>
+
+<!-- Modal para añadir ítem -->
+<div class="modal fade" id="addItemModal" tabindex="-1" role="dialog" aria-labelledby="addItemModalLabel" aria-hidden="true">
+    <div class="modal-dialog" role="document">
+        <div class="modal-content">
+            <div class="modal-header">
+                <h5 class="modal-title" id="addItemModalLabel">Añadir Ítem</h5>
+                <button type="button" class="close" data-dismiss="modal" aria-label="Close">
+                    <span aria-hidden="true">&times;</span>
+                </button>
+            </div>
+            <form method="post" action="{{ url_for('menu.add_item') }}" enctype="multipart/form-data">
+                <div class="modal-body">
+                    <div class="form-group">
+                        <label for="item_name">Nombre</label>
+                        <input type="text" class="form-control" id="item_name" name="name" required>
+                    </div>
+                    <div class="form-group">
+                        <label for="item_description">Descripción</label>
+                        <textarea class="form-control" id="item_description" name="description" rows="3"></textarea>
+                    </div>
+                    <div class="form-group">
+                        <label for="item_price">Precio ($)</label>
+                        <input type="number" class="form-control" id="item_price" name="price" step="0.01" min="0" required>
+                    </div>
+                    <div class="form-group">
+                        <label for="item_category">Categoría</label>
+                        <select class="form-control" id="item_category" name="category_id" required>
+                            {% for category in categories %}
+                                <option value="{{ category.id }}">{{ category.name }}</option>
+                            {% endfor %}
+                        </select>
+                    </div>
+                    <div class="form-group">
+                        <label for="item_image">Imagen</label>
+                        <input type="file" class="form-control-file" id="item_image" name="image" accept="image/*">
+                    </div>
+                </div>
+                <div class="modal-footer">
+                    <button type="button" class="btn btn-secondary" data-dismiss="modal">Cancelar</button>
+                    <button type="submit" class="btn btn-primary">Guardar</button>
+                </div>
+            </form>
+        </div>
+    </div>
+</div>
+
+<!-- Modal para editar ítem -->
+<div class="modal fade" id="editItemModal" tabindex="-1" role="dialog" aria-labelledby="editItemModalLabel" aria-hidden="true">
+    <div class="modal-dialog" role="document">
+        <div class="modal-content">
+            <div class="modal-header">
+                <h5 class="modal-title" id="editItemModalLabel">Editar Ítem</h5>
+                <button type="button" class="close" data-dismiss="modal" aria-label="Close">
+                    <span aria-hidden="true">&times;</span>
+                </button>
+            </div>
+            <form method="post" action="" id="edit-item-form" enctype="multipart/form-data">
+                <div class="modal-body">
+                    <div class="form-group">
+                        <label for="edit_item_name">Nombre</label>
+                        <input type="text" class="form-control" id="edit_item_name" name="name" required>
+                    </div>
+                    <div class="form-group">
+                        <label for="edit_item_description">Descripción</label>
+                        <textarea class="form-control" id="edit_item_description" name="description" rows="3"></textarea>
+                    </div>
+                    <div class="form-group">
+                        <label for="edit_item_price">Precio ($)</label>
+                        <input type="number" class="form-control" id="edit_item_price" name="price" step="0.01" min="0" required>
+                    </div>
+                    <div class="form-group">
+                        <label for="edit_item_category">Categoría</label>
+                        <select class="form-control" id="edit_item_category" name="category_id" required>
+                            {% for category in categories %}
+                                <option value="{{ category.id }}">{{ category.name }}</option>
+                            {% endfor %}
+                        </select>
+                    </div>
+                    <div class="form-group">
+                        <label for="edit_item_image">Imagen (Dejar vacío para mantener la actual)</label>
+                        <input type="file" class="form-control-file" id="edit_item_image" name="image" accept="image/*">
+                    </div>
+                </div>
+                <div class="modal-footer">
+                    <button type="button" class="btn btn-secondary" data-dismiss="modal">Cancelar</button>
+                    <button type="submit" class="btn btn-primary">Guardar Cambios</button>
+                </div>
+            </form>
+        </div>
+    </div>
+</div>
+
+{% block extra_js %}
+<script>
+    // Script para manejar la edición de categorías
+    $('.edit-category-btn').click(function() {
+        const id = $(this).data('id');
+        const name = $(this).data('name');
+        const description = $(this).data('description');
+        
+        $('#edit_category_name').val(name);
+        $('#edit_category_description').val(description);
+        $('#edit-category-form').attr('action', '{{ url_for("menu.edit_category", category_id="") }}' + id);
+    });
+    
+    // Script para manejar la edición de ítems
+    $('.edit-item-btn').click(function() {
+        const id = $(this).data('id');
+        const name = $(this).data('name');
+        const description = $(this).data('description');
+        const price = $(this).data('price');
+        const category = $(this).data('category');
+        
+        $('#edit_item_name').val(name);
+        $('#edit_item_description').val(description);
+        $('#edit_item_price').val(price);
+        $('#edit_item_category').val(category);
+        $('#edit-item-form').attr('action', '{{ url_for("menu.edit_item", item_id="") }}' + id);
+    });
+    
+    // Confirmación para eliminar ítems
+    $('.delete-item-form').submit(function(e) {
+        if (!confirm('¿Estás seguro de que deseas eliminar este ítem? Esta acción no se puede deshacer.')) {
+            e.preventDefault();
+        }
+    });
+</script>
+{% endblock %}

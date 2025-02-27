@@ -1,0 +1,103 @@
+{# app/presentation/templates/customer/profile.html #}
+{% extends "layout.html" %}
+
+{% block title %}Mi Perfil - Food Delivery App{% endblock %}
+
+{% block content %}
+<div class="row">
+    <div class="col-md-3">
+        <div class="card mb-4">
+            <div class="card-header bg-primary text-white">
+                Mi Cuenta
+            </div>
+            <div class="list-group list-group-flush">
+                <a href="{{ url_for('customer.dashboard') }}" class="list-group-item list-group-item-action">
+                    <i class="fas fa-tachometer-alt"></i> Dashboard
+                </a>
+                <a href="{{ url_for('orders.list_orders') }}" class="list-group-item list-group-item-action">
+                    <i class="fas fa-clipboard-list"></i> Mis Pedidos
+                </a>
+                <a href="{{ url_for('customer.favorites') }}" class="list-group-item list-group-item-action">
+                    <i class="fas fa-heart"></i> Favoritos
+                </a>
+                <a href="{{ url_for('customer.profile') }}" class="list-group-item list-group-item-action active">
+                    <i class="fas fa-user-edit"></i> Editar Perfil
+                </a>
+            </div>
+        </div>
+    </div>
+    
+    <div class="col-md-9">
+        <div class="card">
+            <div class="card-header">
+                <h4 class="mb-0">Mi Perfil</h4>
+            </div>
+            <div class="card-body">
+                <form method="post" action="{{ url_for('customer.profile') }}">
+                    <div class="form-group">
+                        <label for="username">Nombre de usuario</label>
+                        <input type="text" class="form-control" id="username" value="{{ current_user.username }}" disabled>
+                        <small class="form-text text-muted">
+                            Para cambiar tu nombre de usuario, contacta a soporte.
+                        </small>
+                    </div>
+                    
+                    <div class="form-group">
+                        <label for="email">Email</label>
+                        <input type="email" class="form-control" id="email" value="{{ current_user.email }}" disabled>
+                        <small class="form-text text-muted">
+                            Para cambiar tu email, contacta a soporte.
+                        </small>
+                    </div>
+                    
+                    <div class="form-group">
+                        <label for="name">Nombre completo</label>
+                        <input type="text" class="form-control" id="name" name="name" value="{{ customer.name }}" required>
+                    </div>
+                    
+                    <div class="form-group">
+                        <label for="phone">Teléfono</label>
+                        <input type="tel" class="form-control" id="phone" name="phone" value="{{ customer.phone }}" required>
+                    </div>
+                    
+                    <div class="form-group">
+                        <label for="address">Dirección de entrega predeterminada</label>
+                        <input type="text" class="form-control" id="address" name="address" value="{{ customer.address }}" required>
+                    </div>
+                    
+                    <button type="submit" class="btn btn-primary">Guardar Cambios</button>
+                </form>
+            </div>
+        </div>
+        
+        <div class="card mt-4">
+            <div class="card-header">
+                <h4 class="mb-0">Cambiar Contraseña</h4>
+            </div>
+            <div class="card-body">
+                <form method="post" action="{{ url_for('auth.change_password') }}">
+                    <div class="form-group">
+                        <label for="current_password">Contraseña actual</label>
+                        <input type="password" class="form-control" id="current_password" name="current_password" required>
+                    </div>
+                    
+                    <div class="form-group">
+                        <label for="new_password">Nueva contraseña</label>
+                        <input type="password" class="form-control" id="new_password" name="new_password" required>
+                        <small class="form-text text-muted">
+                            La contraseña debe tener al menos 8 caracteres.
+                        </small>
+                    </div>
+                    
+                    <div class="form-group">
+                        <label for="confirm_password">Confirmar nueva contraseña</label>
+                        <input type="password" class="form-control" id="confirm_password" name="confirm_password" required>
+                    </div>
+                    
+                    <button type="submit" class="btn btn-primary">Cambiar Contraseña</button>
+                </form>
+            </div>
+        </div>
+    </div>
+</div>
+{% endblock %}

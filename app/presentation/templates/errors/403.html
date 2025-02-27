@@ -1,0 +1,15 @@
+# app/presentation/templates/errors/403.html
+{% extends "layout.html" %}
+
+{% block title %}Acceso Prohibido (403) - Food Delivery App{% endblock %}
+
+{% block content %}
+<div class="text-center py-5">
+    <h1 class="display-1 text-muted">403</h1>
+    <h2 class="mb-4">Acceso Prohibido</h2>
+    <p class="lead mb-5">No tienes permisos para acceder a esta página.</p>
+    <a href="/" class="btn btn-primary">
+        <i class="fas fa-home"></i> Volver al Inicio
+    </a>
+</div>
+{% endblock %}

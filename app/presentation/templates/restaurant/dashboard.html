@@ -1,0 +1,218 @@
+{# app/presentation/templates/restaurant/dashboard.html #}
+{% extends "layout.html" %}
+
+{% block title %}Dashboard - Food Delivery App{% endblock %}
+
+{% block content %}
+<div class="row">
+    <div class="col-md-3">
+        <div class="card mb-4">
+            <div class="card-header bg-primary text-white">
+                Gestión del Restaurante
+            </div>
+            <div class="list-group list-group-flush">
+                <a href="{{ url_for('restaurant.dashboard') }}" class="list-group-item list-group-item-action active">
+                    <i class="fas fa-tachometer-alt"></i> Dashboard
+                </a>
+                <a href="{{ url_for('restaurant.orders') }}" class="list-group-item list-group-item-action">
+                    <i class="fas fa-clipboard-list"></i> Pedidos
+                </a>
+                <a href="{{ url_for('menu.manage_menu') }}" class="list-group-item list-group-item-action">
+                    <i class="fas fa-utensils"></i> Gestión de Menú
+                </a>
+                <a href="{{ url_for('restaurant.profile') }}" class="list-group-item list-group-item-action">
+                    <i class="fas fa-store"></i> Perfil del Restaurante
+                </a>
+            </div>
+        </div>
+        
+        <div class="card">
+            <div class="card-header">
+                <h5 class="mb-0">Estado de la Tienda</h5>
+            </div>
+            <div class="card-body">
+                <div class="custom-control custom-switch">
+                    <input type="checkbox" class="custom-control-input" id="toggle-store-status" 
+                          {% if restaurant.is_active %}checked{% endif %}>
+                    <label class="custom-control-label" for="toggle-store-status">
+                        {% if restaurant.is_active %}
+                            <span class="text-success">Abierto</span>
+                        {% else %}
+                            <span class="text-danger">Cerrado</span>
+                        {% endif %}
+                    </label>
+                </div>
+                <small class="form-text text-muted mt-2">
+                    Cambia el estado para pausar temporalmente los pedidos.
+                </small>
+            </div>
+        </div>
+    </div>
+    
+    <div class="col-md-9">
+        <div class="row">
+            <div class="col-md-4">
+                <div class="card mb-4 stats-card">
+                    <div class="stats-icon">
+                        <i class="fas fa-clipboard-list"></i>
+                    </div>
+                    <div class="stats-value">{{ stats.total_orders }}</div>
+                    <div class="stats-label">Pedidos Totales</div>
+                </div>
+            </div>
+            <div class="col-md-4">
+                <div class="card mb-4 stats-card">
+                    <div class="stats-icon">
+                        <i class="fas fa-dollar-sign"></i>
+                    </div>
+                    <div class="stats-value">${{ "%.2f"|format(stats.total_revenue) }}</div>
+                    <div class="stats-label">Ingresos Totales</div>
+                </div>
+            </div>
+            <div class="col-md-4">
+                <div class="card mb-4 stats-card">
+                    <div class="stats-icon">
+                        <i class="fas fa-star"></i>
+                    </div>
+                    <div class="stats-value">{{ "%.1f"|format(stats.average_rating) }}</div>
+                    <div class="stats-label">Calificación Promedio</div>
+                </div>
+            </div>
+        </div>
+        
+        <div class="card mb-4">
+            <div class="card-header">
+                <h5 class="mb-0">Pedidos Recientes</h5>
+            </div>
+            <div class="card-body">
+                {% if recent_orders %}
+                    <div class="table-responsive">
+                        <table class="table table-hover">
+                            <thead>
+                                <tr>
+                                    <th>ID</th>
+                                    <th>Cliente</th>
+                                    <th>Fecha</th>
+                                    <th>Total</th>
+                                    <th>Estado</th>
+                                    <th>Acciones</th>
+                                </tr>
+                            </thead>
+                            <tbody>
+                                {% for order in recent_orders %}
+                                <tr>
+                                    <td>#{{ order.id }}</td>
+                                    <td>{{ order.customer.name }}</td>
+                                    <td>{{ order.created_at.strftime('%d/%m/%Y %H:%M') }}</td>
+                                    <td>${{ "%.2f"|format(order.total_price) }}</td>
+                                    <td>
+                                        <span class="badge badge-{{ status_colors[order.status] }}">
+                                            {{ status_labels[order.status] }}
+                                        </span>
+                                    </td>
+                                    <td>
+                                        <a href="{{ url_for('orders.order_details', order_id=order.id) }}" 
+                                           class="btn btn-sm btn-outline-primary">
+                                            Ver Detalles
+                                        </a>
+                                    </td>
+                                </tr>
+                                {% endfor %}
+                            </tbody>
+                        </table>
+                    </div>
+                    <div class="text-center mt-3">
+                        <a href="{{ url_for('restaurant.orders') }}" class="btn btn-outline-primary">
+                            Ver Todos los Pedidos
+                        </a>
+                    </div>
+                {% else %}
+                    <p class="text-muted text-center py-4">
+                        No tienes pedidos recientes.
+                    </p>
+                {% endif %}
+            </div>
+        </div>
+        
+        <div class="card">
+            <div class="card-header">
+                <h5 class="mb-0">Ventas por Tiempo</h5>
+            </div>
+            <div class="card-body">
+                <div class="sales-chart" id="sales-chart" style="height: 300px;"></div>
+            </div>
+        </div>
+    </div>
+</div>
+{% endblock %}
+
+{% block extra_js %}
+<script src="https://cdn.jsdelivr.net/npm/chart.js@2.9.4/dist/Chart.min.js"></script>
+<script>
+    $(document).ready(function() {
+        // Cambiar estado de la tienda
+        $('#toggle-store-status').change(function() {
+            const isActive = $(this).prop('checked');
+            
+            $.ajax({
+                url: "{{ url_for('restaurant.toggle_status') }}",
+                type: 'POST',
+                data: JSON.stringify({ is_active: isActive }),
+                contentType: 'application/json',
+                success: function(response) {
+                    if (isActive) {
+                        $(this).next('label').html('<span class="text-success">Abierto</span>');
+                    } else {
+                        $(this).next('label').html('<span class="text-danger">Cerrado</span>');
+                    }
+                    
+                    // Mostrar mensaje
+                    const message = isActive ? 'Tienda abierta para pedidos' : 'Tienda cerrada temporalmente';
+                    const $alert = $('<div class="alert alert-success alert-dismissible fade show"></div>')
+                        .text(message)
+                        .append('<button type="button" class="close" data-dismiss="alert"><span>&times;</span></button>')
+                        .prependTo('.card-body');
+                    
+                    // Ocultar después de 5 segundos
+                    $alert.delay(5000).fadeOut(500);
+                },
+                error: function() {
+                    alert('Error al cambiar el estado de la tienda');
+                    $(this).prop('checked', !isActive);
+                }
+            });
+        });
+        
+        // Gráfico de ventas
+        const ctx = document.getElementById('sales-chart').getContext('2d');
+        
+        // Datos de ejemplo - estos vendrían del backend
+        const labels = {{ chart_labels|tojson }};
+        const salesData = {{ chart_data|tojson }};
+        
+        const chart = new Chart(ctx, {
+            type: 'line',
+            data: {
+                labels: labels,
+                datasets: [{
+                    label: 'Ventas ($)',
+                    data: salesData,
+                    backgroundColor: 'rgba(255, 90, 95, 0.2)',
+                    borderColor: 'rgb(255, 90, 95)',
+                    borderWidth: 2,
+                    tension: 0.4
+                }]
+            },
+            options: {
+                responsive: true,
+                maintainAspectRatio: false,
+                scales: {
+                    y: {
+                        beginAtZero: true
+                    }
+                }
+            }
+        });
+    });
+</script>
+{% endblock %}

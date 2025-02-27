@@ -1,0 +1,302 @@
+{# app/presentation/templates/orders/list_orders.html #}
+{% extends "layout.html" %}
+
+{% block title %}Mis Pedidos - Food Delivery App{% endblock %}
+
+{% block content %}
+<div class="row">
+    {% if current_user.role == 'customer' %}
+    <div class="col-md-3">
+        <div class="card mb-4">
+            <div class="card-header bg-primary text-white">
+                Mi Cuenta
+            </div>
+            <div class="list-group list-group-flush">
+                <a href="{{ url_for('customer.dashboard') }}" class="list-group-item list-group-item-action">
+                    <i class="fas fa-tachometer-alt"></i> Dashboard
+                </a>
+                <a href="{{ url_for('orders.list_orders') }}" class="list-group-item list-group-item-action active">
+                    <i class="fas fa-clipboard-list"></i> Mis Pedidos
+                </a>
+                <a href="{{ url_for('customer.favorites') }}" class="list-group-item list-group-item-action">
+                    <i class="fas fa-heart"></i> Favoritos
+                </a>
+                <a href="{{ url_for('customer.profile') }}" class="list-group-item list-group-item-action">
+                    <i class="fas fa-user-edit"></i> Editar Perfil
+                </a>
+            </div>
+        </div>
+    </div>
+    {% elif current_user.role == 'restaurant' %}
+    <div class="col-md-3">
+        <div class="card mb-4">
+            <div class="card-header bg-primary text-white">
+                Gestión del Restaurante
+            </div>
+            <div class="list-group list-group-flush">
+                <a href="{{ url_for('restaurant.dashboard') }}" class="list-group-item list-group-item-action">
+                    <i class="fas fa-tachometer-alt"></i> Dashboard
+                </a>
+                <a href="{{ url_for('restaurant.orders') }}" class="list-group-item list-group-item-action active">
+                    <i class="fas fa-clipboard-list"></i> Pedidos
+                </a>
+                <a href="{{ url_for('menu.manage_menu') }}" class="list-group-item list-group-item-action">
+                    <i class="fas fa-utensils"></i> Gestión de Menú
+                </a>
+                <a href="{{ url_for('restaurant.profile') }}" class="list-group-item list-group-item-action">
+                    <i class="fas fa-store"></i> Perfil del Restaurante
+                </a>
+            </div>
+        </div>
+        
+        <div class="card mb-4">
+            <div class="card-header">
+                <h5 class="mb-0">Filtrar por Estado</h5>
+            </div>
+            <div class="card-body">
+                <form action="{{ url_for('restaurant.orders') }}" method="get">
+                    <div class="form-group">
+                        <select name="status" class="form-control" onchange="this.form.submit()">
+                            <option value="">Todos los pedidos</option>
+                            {% for status, label in status_options.items() %}
+                                <option value="{{ status }}" {% if request.args.get('status') == status %}selected{% endif %}>
+                                    {{ label }}
+                                </option>
+                            {% endfor %}
+                        </select>
+                    </div>
+                </form>
+            </div>
+        </div>
+    </div>
+    {% endif %}
+    
+    <div class="col-md-{% if current_user.is_authenticated %}9{% else %}12{% endif %}">
+        <div class="card">
+            <div class="card-header d-flex justify-content-between align-items-center">
+                <h4 class="mb-0">
+                    {% if current_user.role == 'customer' %}
+                        Mis Pedidos
+                    {% elif current_user.role == 'restaurant' %}
+                        Gestión de Pedidos
+                    {% endif %}
+                </h4>
+                {% if current_user.role == 'restaurant' %}
+                    <div class="btn-group">
+                        <button type="button" class="btn btn-sm btn-outline-primary" id="refresh-orders">
+                            <i class="fas fa-sync-alt"></i> Actualizar
+                        </button>
+                    </div>
+                {% endif %}
+            </div>
+            <div class="card-body">
+                {% if orders %}
+                    <div class="table-responsive">
+                        <table class="table table-hover">
+                            <thead>
+                                <tr>
+                                    <th>ID</th>
+                                    {% if current_user.role == 'customer' %}
+                                        <th>Restaurante</th>
+                                    {% elif current_user.role == 'restaurant' %}
+                                        <th>Cliente</th>
+                                    {% endif %}
+                                    <th>Fecha</th>
+                                    <th>Total</th>
+                                    <th>Estado</th>
+                                    <th>Acciones</th>
+                                </tr>
+                            </thead>
+                            <tbody>
+                                {% for order in orders %}
+                                <tr>
+                                    <td>#{{ order.id }}</td>
+                                    {% if current_user.role == 'customer' %}
+                                        <td>{{ order.restaurant.name }}</td>
+                                    {% elif current_user.role == 'restaurant' %}
+                                        <td>{{ order.customer.name }}</td>
+                                    {% endif %}
+                                    <td>{{ order.created_at.strftime('%d/%m/%Y %H:%M') }}</td>
+                                    <td>${{ "%.2f"|format(order.total_price) }}</td>
+                                    <td>
+                                        <span class="badge badge-{{ status_colors[order.status] }}">
+                                            {{ status_labels[order.status] }}
+                                        </span>
+                                    </td>
+                                    <td>
+                                        <a href="{{ url_for('orders.order_details', order_id=order.id) }}" 
+                                           class="btn btn-sm btn-outline-primary">
+                                            Ver Detalles
+                                        </a>
+                                        
+                                        {% if current_user.role == 'restaurant' and order.status not in ['delivered', 'cancelled'] %}
+                                            <button type="button" class="btn btn-sm btn-outline-success update-status-btn" 
+                                                    data-toggle="modal" data-target="#updateStatusModal" 
+                                                    data-order-id="{{ order.id }}" data-status="{{ order.status }}">
+                                                Actualizar Estado
+                                            </button>
+                                        {% endif %}
+                                    </td>
+                                </tr>
+                                {% endfor %}
+                            </tbody>
+                        </table>
+                    </div>
+                {% else %}
+                    <div class="text-center py-5">
+                        <i class="fas fa-clipboard-list fa-4x text-muted mb-3"></i>
+                        <h5>No hay pedidos</h5>
+                        <p class="text-muted">
+                            {% if current_user.role == 'customer' %}
+                                Aún no has realizado ningún pedido. ¡Explora nuestros restaurantes y haz tu primer pedido!
+                                <div class="mt-3">
+                                    <a href="{{ url_for('restaurants') }}" class="btn btn-primary">
+                                        Ver Restaurantes
+                                    </a>
+                                </div>
+                            {% elif current_user.role == 'restaurant' %}
+                                No hay pedidos disponibles con los filtros seleccionados.
+                            {% endif %}
+                        </p>
+                    </div>
+                {% endif %}
+            </div>
+            
+            {% if orders and orders.pages > 1 %}
+            <div class="card-footer">
+                <nav aria-label="Navegación de pedidos">
+                    <ul class="pagination justify-content-center mb-0">
+                        {% if orders.has_prev %}
+                            <li class="page-item">
+                                <a class="page-link" href="{{ url_for(request.endpoint, page=orders.prev_num, **request.args) }}">
+                                    &laquo; Anterior
+                                </a>
+                            </li>
+                        {% else %}
+                            <li class="page-item disabled">
+                                <span class="page-link">&laquo; Anterior</span>
+                            </li>
+                        {% endif %}
+                        
+                        {% for page_num in orders.iter_pages(left_edge=1, right_edge=1, left_current=2, right_current=2) %}
+                            {% if page_num %}
+                                {% if page_num == orders.page %}
+                                    <li class="page-item active">
+                                        <span class="page-link">{{ page_num }}</span>
+                                    </li>
+                                {% else %}
+                                    <li class="page-item">
+                                        <a class="page-link" href="{{ url_for(request.endpoint, page=page_num, **request.args) }}">
+                                            {{ page_num }}
+                                        </a>
+                                    </li>
+                                {% endif %}
+                            {% else %}
+                                <li class="page-item disabled">
+                                    <span class="page-link">...</span>
+                                </li>
+                            {% endif %}
+                        {% endfor %}
+                        
+                        {% if orders.has_next %}
+                            <li class="page-item">
+                                <a class="page-link" href="{{ url_for(request.endpoint, page=orders.next_num, **request.args) }}">
+                                    Siguiente &raquo;
+                                </a>
+                            </li>
+                        {% else %}
+                            <li class="page-item disabled">
+                                <span class="page-link">Siguiente &raquo;</span>
+                            </li>
+                        {% endif %}
+                    </ul>
+                </nav>
+            </div>
+            {% endif %}
+        </div>
+    </div>
+</div>
+
+{% if current_user.role == 'restaurant' %}
+<!-- Modal para actualizar estado -->
+<div class="modal fade" id="updateStatusModal" tabindex="-1" role="dialog" aria-labelledby="updateStatusModalLabel" aria-hidden="true">
+    <div class="modal-dialog" role="document">
+        <div class="modal-content">
+            <div class="modal-header">
+                <h5 class="modal-title" id="updateStatusModalLabel">Actualizar Estado del Pedido</h5>
+                <button type="button" class="close" data-dismiss="modal" aria-label="Close">
+                    <span aria-hidden="true">&times;</span>
+                </button>
+            </div>
+            <form id="update-status-form" method="post" action="">
+                <div class="modal-body">
+                    <div class="form-group">
+                        <label for="order_status">Nuevo Estado</label>
+                        <select class="form-control" id="order_status" name="status" required>
+                            <!-- Las opciones se cargarán dinámicamente con JavaScript -->
+                        </select>
+                    </div>
+                </div>
+                <div class="modal-footer">
+                    <button type="button" class="btn btn-secondary" data-dismiss="modal">Cancelar</button>
+                    <button type="submit" class="btn btn-primary">Guardar Cambios</button>
+                </div>
+            </form>
+        </div>
+    </div>
+</div>
+{% endif %}
+
+{% block extra_js %}
+<script>
+    $(document).ready(function() {
+        {% if current_user.role == 'restaurant' %}
+        // Actualizar modal de estado
+        $('.update-status-btn').click(function() {
+            const orderId = $(this).data('order-id');
+            const currentStatus = $(this).data('status');
+            const $select = $('#order_status');
+            
+            // Limpiar opciones existentes
+            $select.empty();
+            
+            // Añadir nuevas opciones según el estado actual
+            const nextStates = {
+                'pending': ['preparing', 'cancelled'],
+                'preparing': ['ready', 'cancelled'],
+                'ready': ['delivering', 'cancelled'],
+                'delivering': ['delivered', 'cancelled']
+            };
+            
+            const stateLabels = {
+                'pending': 'Pendiente',
+                'preparing': 'Preparando',
+                'ready': 'Listo para entrega',
+                'delivering': 'En camino',
+                'delivered': 'Entregado',
+                'cancelled': 'Cancelado'
+            };
+            
+            if (nextStates[currentStatus]) {
+                nextStates[currentStatus].forEach(state => {
+                    $select.append(`<option value="${state}">${stateLabels[state]}</option>`);
+                });
+            }
+            
+            // Actualizar acción del formulario
+            $('#update-status-form').attr('action', "{{ url_for('restaurant.update_order_status', order_id=0) }}".replace('0', orderId));
+        });
+        
+        // Refrescar pedidos
+        $('#refresh-orders').click(function() {
+            location.reload();
+        });
+        
+        // Auto-refrescar cada 2 minutos
+        setInterval(function() {
+            location.reload();
+        }, 120000);
+        {% endif %}
+    });
+</script>
+{% endblock %}

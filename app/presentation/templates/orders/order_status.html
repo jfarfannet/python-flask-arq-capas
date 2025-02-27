@@ -1,0 +1,102 @@
+{# app/presentation/templates/orders/order_details.html #}
+{% extends "layout.html" %}
+
+{% block title %}Detalles del Pedido - Food Delivery App{% endblock %}
+
+{% block content %}
+<div class="card">
+    <div class="card-header">
+        <div class="d-flex justify-content-between align-items-center">
+            <h4 class="mb-0">Pedido #{{ order.id }}</h4>
+            <span class="badge badge-{{ status_colors[order.status] }} p-2">
+                {{ status_labels[order.status] }}
+            </span>
+        </div>
+    </div>
+    <div class="card-body">
+        <div class="row mb-4">
+            <div class="col-md-6">
+                <h5>Información del Pedido</h5>
+                <p><strong>Fecha:</strong> {{ order.created_at.strftime('%d/%m/%Y %H:%M') }}</p>
+                <p><strong>Restaurante:</strong> {{ order.restaurant.name }}</p>
+                <p><strong>Dirección de entrega:</strong> {{ order.delivery_address }}</p>
+                {% if current_user.role == 'restaurant' %}
+                    <p><strong>Cliente:</strong> {{ order.customer.name }}</p>
+                    <p><strong>Teléfono del cliente:</strong> {{ order.customer.phone }}</p>
+                {% endif %}
+            </div>
+            
+            {% if order.status == 'delivered' %}
+            <div class="col-md-6">
+                <h5>Información de Entrega</h5>
+                <p><strong>Entregado el:</strong> {{ order.updated_at.strftime('%d/%m/%Y %H:%M') }}</p>
+                <p><strong>Tiempo de entrega:</strong> {{ (order.updated_at - order.created_at).seconds // 60 }} minutos</p>
+            </div>
+            {% endif %}
+        </div>
+        
+        <h5>Detalle de productos</h5>
+        <div class="table-responsive">
+            <table class="table table-striped">
+                <thead>
+                    <tr>
+                        <th>Producto</th>
+                        <th>Precio Unitario</th>
+                        <th>Cantidad</th>
+                        <th class="text-right">Subtotal</th>
+                    </tr>
+                </thead>
+                <tbody>
+                    {% for item in order.order_items %}
+                    <tr>
+                        <td>{{ item.menu_item.name }}</td>
+                        <td>${{ "%.2f"|format(item.item_price) }}</td>
+                        <td>{{ item.quantity }}</td>
+                        <td class="text-right">${{ "%.2f"|format(item.item_price * item.quantity) }}</td>
+                    </tr>
+                    {% endfor %}
+                </tbody>
+                <tfoot>
+                    <tr>
+                        <th colspan="3" class="text-right">Total:</th>
+                        <th class="text-right">${{ "%.2f"|format(order.total_price) }}</th>
+                    </tr>
+                </tfoot>
+            </table>
+        </div>
+        
+        {% if current_user.role == 'restaurant' and order.status not in ['delivered', 'cancelled'] %}
+        <div class="mt-4">
+            <h5>Actualizar Estado</h5>
+            <form method="post" action="{{ url_for('restaurant.update_order_status', order_id=order.id) }}" class="form-inline">
+                <select name="status" class="form-control mr-2">
+                    {% for status, label in status_options.items() %}
+                        {% if order.status != status %}
+                            <option value="{{ status }}">{{ label }}</option>
+                        {% endif %}
+                    {% endfor %}
+                </select>
+                <button type="submit" class="btn btn-primary">Actualizar Estado</button>
+            </form>
+        </div>
+        {% endif %}
+    </div>
+    <div class="card-footer">
+        <a href="{{ url_for('orders.list_orders') }}" class="btn btn-outline-secondary">
+            <i class="fas fa-arrow-left"></i> Volver a Pedidos
+        </a>
+        
+        {% if current_user.role == 'customer' and order.status == 'delivered' %}
+            {% if not order.has_review %}
+                <a href="{{ url_for('reviews.add_review', order_id=order.id) }}" class="btn btn-outline-primary float-right">
+                    <i class="fas fa-star"></i> Dejar Reseña
+                </a>
+            {% else %}
+                <span class="text-success float-right">
+                    <i class="fas fa-check-circle"></i> Reseña enviada
+                </span>
+            {% endif %}
+        {% endif %}
+    </div>
+</div>
+{% endblock %}

@@ -1,0 +1,67 @@
+{% extends "layout.html" %}
+
+{% block title %}Inicio - Food Delivery App{% endblock %}
+
+{% block content %}
+<div class="jumbotron">
+    <h1 class="display-4">¡Comida a domicilio en minutos!</h1>
+    <p class="lead">
+        Descubre los mejores restaurantes de tu zona y disfruta de tu comida favorita sin salir de casa.
+    </p>
+    <hr class="my-4">
+    <div class="row">
+        <div class="col-md-8">
+            <form action="/restaurantes" method="get" class="form-inline">
+                <div class="input-group w-100">
+                    <input type="text" name="q" class="form-control form-control-lg" 
+                           placeholder="Buscar restaurantes o tipos de comida...">
+                    <div class="input-group-append">
+                        <button class="btn btn-primary" type="submit">
+                            <i class="fas fa-search"></i> Buscar
+                        </button>
+                    </div>
+                </div>
+            </form>
+        </div>
+    </div>
+</div>
+
+<h2 class="mb-4">Restaurantes populares</h2>
+<div class="row">
+    {% if popular_restaurants %}
+        {% for restaurant in popular_restaurants %}
+        <div class="col-md-4 mb-4">
+            <div class="card h-100">
+                <div class="card-body">
+                    <h5 class="card-title">{{ restaurant.name }}</h5>
+                    <p class="card-text">{{ restaurant.description }}</p>
+                </div>
+                <div class="card-footer">
+                    <a href="/restaurant/{{ restaurant.id }}" class="btn btn-primary btn-sm">
+                        Ver Menú
+                    </a>
+                </div>
+            </div>
+        </div>
+        {% endfor %}
+    {% else %}
+        <div class="col-12">
+            <p class="text-muted">No hay restaurantes disponibles en este momento.</p>
+        </div>
+    {% endif %}
+</div>
+
+<h2 class="mt-5 mb-4">Categorías de comida</h2>
+<div class="row">
+    {% for cuisine in cuisines %}
+    <div class="col-md-3 col-sm-6 mb-4">
+        <a href="/restaurantes?cuisine={{ cuisine.name }}" class="text-decoration-none">
+            <div class="card text-center p-3">
+                <i class="{{ cuisine.icon }} fa-3x mb-3 text-primary"></i>
+                <h5>{{ cuisine.name }}</h5>
+            </div>
+        </a>
+    </div>
+    {% endfor %}
+</div>
+{% endblock %}

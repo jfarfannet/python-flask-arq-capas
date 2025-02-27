@@ -1,0 +1,80 @@
+{# app/presentation/templates/cart/confirmation.html #}
+{% extends "layout.html" %}
+
+{% block title %}Pedido Confirmado - Food Delivery App{% endblock %}
+
+{% block content %}
+<div class="row justify-content-center">
+    <div class="col-md-8">
+        <div class="card">
+            <div class="card-body text-center py-5">
+                <div class="mb-4">
+                    <i class="fas fa-check-circle text-success" style="font-size: 5rem;"></i>
+                </div>
+                <h2 class="mb-3">¡Pedido Confirmado!</h2>
+                <p class="lead">Tu pedido #{{ order.id }} ha sido recibido correctamente.</p>
+                <p>Recibirás actualizaciones sobre el estado de tu pedido.</p>
+                
+                <div class="order-details mt-4">
+                    <div class="row">
+                        <div class="col-md-6 text-md-right">
+                            <p><strong>Restaurante:</strong></p>
+                        </div>
+                        <div class="col-md-6 text-md-left">
+                            <p>{{ order.restaurant.name }}</p>
+                        </div>
+                    </div>
+                    <div class="row">
+                        <div class="col-md-6 text-md-right">
+                            <p><strong>Dirección de entrega:</strong></p>
+                        </div>
+                        <div class="col-md-6 text-md-left">
+                            <p>{{ order.delivery_address }}</p>
+                        </div>
+                    </div>
+                    <div class="row">
+                        <div class="col-md-6 text-md-right">
+                            <p><strong>Método de pago:</strong></p>
+                        </div>
+                        <div class="col-md-6 text-md-left">
+                            <p>{{ payment_methods[order.payment_method] }}</p>
+                        </div>
+                    </div>
+                    <div class="row">
+                        <div class="col-md-6 text-md-right">
+                            <p><strong>Total:</strong></p>
+                        </div>
+                        <div class="col-md-6 text-md-left">
+                            <p>${{ "%.2f"|format(order.total_price) }}</p>
+                        </div>
+                    </div>
+                    <div class="row">
+                        <div class="col-md-6 text-md-right">
+                            <p><strong>Tiempo estimado de entrega:</strong></p>
+                        </div>
+                        <div class="col-md-6 text-md-left">
+                            <p>{{ order.estimated_delivery_time }}</p>
+                        </div>
+                    </div>
+                </div>
+                
+                <div class="mt-4">
+                    <a href="{{ url_for('orders.order_details', order_id=order.id) }}" class="btn btn-primary">
+                        Ver Detalles del Pedido
+                    </a>
+                    <a href="{{ url_for('index') }}" class="btn btn-outline-secondary ml-2">
+                        Volver al Inicio
+                    </a>
+                </div>
+            </div>
+        </div>
+    </div>
+</div>
+
+<script>
+    // Limpiar carrito después de confirmar el pedido
+    $(document).ready(function() {
+        localStorage.removeItem('food_delivery_cart');
+    });
+</script>
+{% endblock %}
